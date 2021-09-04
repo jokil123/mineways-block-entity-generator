@@ -1,40 +1,66 @@
-import PIL
+from PIL import Image
 import re
 
 
-class Vert():
-    def __init__(self, x: float, y: float, z: float, object: str = None, group: str = None, materialSelection: str = None) -> None:
+class VertexNormal():
+    def __init__(self, x: float, y: float, z: float) -> None:
         self.x = x
         self.y = y
         self.z = z
-        self.objectLabel = object
-        self.group = group
-        self.materialSelection = materialSelection
 
 
-class UvVert():
+class Vertex():
+    def __init__(self, x: float, y: float, z: float) -> None:
+        self.x = x
+        self.y = y
+        self.z = z
+
+
+class UvVertex():
     def __init__(self, u: float, v: float) -> None:
         self.u = u
         self.v = v
 
 
 class Face():
-    def __init__(self, triangulation: list[int], uv: list[int]) -> None:
-        self.triangulation = triangulation
-        self.uv = uv
+    def __init__(self, triangulation: list[int] = None, uv: list[int] = None, normal: list[int] = None, object: str = None, group: str = None, materialSelection: str = None) -> None:
+        self.triangulation = triangulation or []
+        self.uv = uv or []
+        self.normal = normal or []
+        self.objectLabel = object
+        self.group = group
+        self.materialSelection = materialSelection
+
+
+class MaterialMap:
+    def __init__(self, rgb: list[float] = None, map: Image = None) -> None:
+        self.rgb = rgb or []
+        self.map = map or Image.new(mode="RGBA", size=(1, 1))
+
+
+class Material():
+    def __init__(self, name: str, ambient: MaterialMap = None, diffuse: MaterialMap = None, specular: MaterialMap = None, specularWeight: MaterialMap = None, dissolve: MaterialMap = None, illum: float = None) -> None:
+        self.name = name
+        self.ambient = ambient or MaterialMap()
+        self.diffuse = diffuse or MaterialMap()
+        self.specular = specular or MaterialMap()
+        self.specularWeight = specularWeight or MaterialMap()
+        self.dissolve = dissolve or MaterialMap()
+        self.illum = illum or 0
 
 
 class MaterialLibrary():
-    def __init__(self, map_Kd=None) -> None:
-        self.map_Kd = map_Kd
+    def __init__(self, materials: list[Material] = None) -> None:
+        self.materials = materials or []
 
 
 class ObjModel():
-    def __init__(self, verts: list[Vert] = [], faces: list[Face] = [], uvVerts: list[UvVert] = [], materialLibrary=MaterialLibrary()) -> None:
-        self.verts = verts
-        self.faces = faces
-        self.uvVerts = uvVerts
-        self.MaterialLibrary: materialLibrary = materialLibrary
+    def __init__(self, verts: list[Vertex] = None, faces: list[Face] = None, uvVerts: list[UvVertex] = None, vertexNormals: list[VertexNormal] = None, materialLibrary: MaterialLibrary = None) -> None:
+        self.verts = verts or []
+        self.faces = faces or []
+        self.uvVerts = uvVerts or []
+        self.vertexNormals = vertexNormals or []
+        self.MaterialLibrary = materialLibrary or MaterialLibrary()
 
 
 class ObjModelExporter():
@@ -83,20 +109,71 @@ def LoadModel(file: str) -> ObjModel:
             currentMaterialSelection = instructionParams[0]
 
         elif IsInstruction("vt", instruction):
-            uv = UvVert(float(instructionParams[0]), float(
+            uv = UvVertex(float(instructionParams[0]), float(
                 instructionParams[1]))
             obj.uvVerts.append(uv)
 
+        elif IsInstruction("vn", instruction):
+            vertexNormal = VertexNormal(float(instructionParams[0]),
+                                        float(instructionParams[1]),
+                                        float(instructionParams[2]))
+            obj.vertexNormals.append(vertexNormal)
+
         elif IsInstruction("v", instruction):
-            vert = Vert(
+            vertex = Vertex(
                 float(instructionParams[0]),
                 float(instructionParams[1]),
-                float(instructionParams[2]),
-                currentObject, currentGroup, currentMaterialSelection)
+                float(instructionParams[2]),)
 
-            obj.verts.append(vert)
+            obj.verts.append(vertex)
+
+        elif IsInstruction("f", instruction):
+            face = Face(object=currentObject,
+                        group=currentGroup,
+                        materialSelection=currentMaterialSelection)
+
+            for parameter in instructionParams:
+                args = parameter.split("/")
+
+                face.triangulation.append(int(args[0]))
+                try:
+                    face.uv.append(int(args[1]))
+                except:
+                    pass
+                try:
+                    face.normal.append(int(args[2]))
+                except:
+                    pass
+
+            obj.faces.append(face)
+
+        for mtllib in mtllibs:
+            path = JoinPath(file, mtllib)
+            obj.MaterialLibrary = LoadMaterialLibrary(path)
 
     return obj
+
+
+def JoinPath(rootPath: str, subPath: str) -> str:
+    pathSegments = rootPath.split("/")[0:-1]
+    pathSegments.append(subPath)
+    newPath = "/".join(pathSegments)
+    return newPath
+
+
+def LoadMaterialLibrary(path: str) -> MaterialLibrary:
+    mtllib = MaterialLibrary()
+
+    mtlFile = open(path, "r").read()
+    mtlInstructions = mtlFile.splitlines()
+
+    currentMaterial: Material
+
+    for instruction in mtlInstructions:
+
+        pass
+
+    return mtllib
 
 
 obj = LoadModel("schematics/3d/tileEntities/tileEntities.obj")
