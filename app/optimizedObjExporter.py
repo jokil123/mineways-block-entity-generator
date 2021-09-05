@@ -1,25 +1,22 @@
+from ast import Str
+from os import fsdecode
 from PIL import Image
 import re
 
 
 class VertexNormal():
-    def __init__(self, x: float, y: float, z: float) -> None:
-        self.x = x
-        self.y = y
-        self.z = z
+    def __init__(self, normal: list[float]) -> None:
+        self.normal = normal or []
 
 
 class Vertex():
-    def __init__(self, x: float, y: float, z: float) -> None:
-        self.x = x
-        self.y = y
-        self.z = z
+    def __init__(self, position: list[float]) -> None:
+        self.position = position or []
 
 
 class UvVertex():
-    def __init__(self, u: float, v: float) -> None:
-        self.u = u
-        self.v = v
+    def __init__(self, uv: list[float]) -> None:
+        self.uv = uv or []
 
 
 class Face():
@@ -28,7 +25,7 @@ class Face():
         self.uv = uv or []
         self.normal = normal or []
         self.objectLabel = object
-        self.group = group
+        self.groupLabel = group
         self.materialSelection = materialSelection
 
 
@@ -63,17 +60,8 @@ class ObjModel():
         self.uvVerts = uvVerts or []
         self.vertexNormals = vertexNormals or []
         self.MaterialLibrary = materialLibrary or MaterialLibrary()
-
-
-class ObjModelExporter():
-    def __init__(self) -> None:
-        self.objModels: list[ObjModel] = []
-
-    def AddObjModel(self, objModel):
-        pass
-
-    def Save(self, path):
-        pass
+        self.objectLabels: set[str] = set()
+        self.groupLabels: set[str] = set()
 
 
 def IsInstruction(instructionName: str, instruction: str) -> bool:
@@ -103,29 +91,30 @@ def LoadModel(file: str) -> ObjModel:
 
         elif IsInstruction("o", instruction):
             currentObject = instructionParams[0]
+            obj.objectLabels.add(instructionParams[0])
 
         elif IsInstruction("g", instruction):
             currentGroup = instructionParams[0]
+            obj.groupLabels.add(instructionParams[0])
 
         elif IsInstruction("usemtl", instruction):
             currentMaterialSelection = instructionParams[0]
 
         elif IsInstruction("vt", instruction):
-            uv = UvVertex(float(instructionParams[0]), float(
-                instructionParams[1]))
+            uv = UvVertex([float(instructionParams[0]),
+                           float(instructionParams[1])])
             obj.uvVerts.append(uv)
 
         elif IsInstruction("vn", instruction):
-            vertexNormal = VertexNormal(float(instructionParams[0]),
-                                        float(instructionParams[1]),
-                                        float(instructionParams[2]))
+            vertexNormal = VertexNormal([float(instructionParams[0]),
+                                         float(instructionParams[1]),
+                                         float(instructionParams[2])])
             obj.vertexNormals.append(vertexNormal)
 
         elif IsInstruction("v", instruction):
-            vertex = Vertex(
-                float(instructionParams[0]),
-                float(instructionParams[1]),
-                float(instructionParams[2]),)
+            vertex = Vertex([float(instructionParams[0]),
+                             float(instructionParams[1]),
+                             float(instructionParams[2])])
 
             obj.verts.append(vertex)
 
@@ -137,13 +126,13 @@ def LoadModel(file: str) -> ObjModel:
             for parameter in instructionParams:
                 args = parameter.split("/")
 
-                face.triangulation.append(int(args[0]))
+                face.triangulation.append(int(args[0]) - 1)
                 try:
-                    face.uv.append(int(args[1]))
+                    face.uv.append(int(args[1]) - 1)
                 except:
                     pass
                 try:
-                    face.normal.append(int(args[2]))
+                    face.normal.append(int(args[2]) - 1)
                 except:
                     pass
 
@@ -184,8 +173,7 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
         elif IsInstruction("illum", instruction):
             currentMaterial.illum = float(instructionParams[0])
 
-        channels: dict[str, MaterialMap]
-        channels = {
+        channels: dict[str, MaterialMap] = {
             "Ka": currentMaterial.ambient,
             "Kd": currentMaterial.diffuse,
             "Ks": currentMaterial.specular,
@@ -210,4 +198,100 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
     return mtllib
 
 
-obj = LoadModel("schematics/3d/tileEntities/tileEntities.obj")
+def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
+    instructions: list[str] = []
+
+    instructions.append("mtllib " + "Your mum")
+
+    for vertexNormal in model.vertexNormals:
+        command = "vn " + " ".join(map(str, vertexNormal.normal))
+        instructions.append(command)
+
+    for uvVert in model.uvVerts:
+        command = "vt " + " ".join(map(str, uvVert.uv))
+        instructions.append(command)
+
+    for vert in model.verts:
+        command = "v " + " ".join(map(str, vert.position))
+        instructions.append(command)
+
+    faceList = model.faces.copy()
+
+    for objectLabel in model.objectLabels:
+        objectFaceList = list(filter(
+            lambda i: i.objectLabel == objectLabel, faceList))
+        faceList = list(set(faceList) - set(objectFaceList))
+
+        if len(objectFaceList) != 0:
+            instructions.append("o " + objectLabel)
+
+            for groupLabel in model.groupLabels:
+                groupFaceList = list(filter(
+                    lambda i: i.groupLabel == groupLabel, objectFaceList))
+                objectFaceList = list(set(objectFaceList) - set(groupFaceList))
+
+                if len(groupFaceList) != 0:
+                    instructions.append("g " + groupLabel)
+
+                    for materialLabel in map(lambda i: i.name, model.MaterialLibrary.materials):
+                        materialFaceList = list(filter(
+                            lambda i: i.materialSelection == materialLabel, groupFaceList))
+
+                        groupFaceList = list(set(groupFaceList) -
+                                             set(materialFaceList))
+
+                        if len(materialFaceList) != 0:
+                            instructions.append("usemtl " + materialLabel)
+
+                            for face in materialFaceList:
+                                instructions.append(
+                                    CreateFaceInstruction(face))
+
+                    else:
+                        if len(groupFaceList) != 0:
+                            instructions.append("usemtl None")
+                            for face in groupFaceList:
+                                instructions.append(
+                                    CreateFaceInstruction(face))
+            else:
+                if len(objectFaceList) != 0:
+                    instructions.append("g None")
+                    for face in objectFaceList:
+                        instructions.append(CreateFaceInstruction(face))
+        else:
+            if len(faceList) != 0:
+                instructions.append("o None")
+                for face in faceList:
+                    instructions.append(CreateFaceInstruction(face))
+
+    instructions
+    pass
+
+
+def SaveMaterialLibrary(mtllib: MaterialLibrary, path: str) -> None:
+    pass
+
+
+def CreateFaceInstruction(face: Face) -> str:
+    command = "f"
+
+    for i in range(len(face.triangulation)):
+        args: list[str] = []
+        args.append(str(face.triangulation[i] + 1))
+
+        if len(face.normal) != 0:
+            if len(face.uv) != 0:
+                args.append(str(face.uv[i] + 1))
+            else:
+                args.append("")
+            args.append(str(face.normal[i] + 1))
+        elif len(face.uv) != 0:
+            args.append(str(face.uv[i] + 1))
+
+        command += " " + "/".join(args)
+
+    return command
+
+
+obj = LoadModel("schematics/3d/stresstest/stresstest.obj")
+SaveModel(obj, "a")
