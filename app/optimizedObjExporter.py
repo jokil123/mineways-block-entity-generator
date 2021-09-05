@@ -149,9 +149,9 @@ def LoadModel(file: str) -> ObjModel:
 
             obj.faces.append(face)
 
-        for mtllib in mtllibs:
-            path = JoinPath(file, mtllib)
-            obj.MaterialLibrary = LoadMaterialLibrary(path)
+    for mtllib in mtllibs:
+        path = JoinPath(file, mtllib)
+        obj.MaterialLibrary = LoadMaterialLibrary(path)
 
     return obj
 
