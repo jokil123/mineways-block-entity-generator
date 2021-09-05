@@ -33,13 +33,14 @@ class Face():
 
 
 class MaterialMap:
-    def __init__(self, rgb: list[float] = None, map: Image = None) -> None:
+    def __init__(self, rgb: list[float] = None, map: Image = None, map_path: str = None) -> None:
         self.rgb = rgb or []
         self.map = map or Image.new(mode="RGBA", size=(1, 1))
+        self.map_path = map_path or None
 
 
 class Material():
-    def __init__(self, name: str, ambient: MaterialMap = None, diffuse: MaterialMap = None, specular: MaterialMap = None, specularWeight: MaterialMap = None, dissolve: MaterialMap = None, illum: float = None) -> None:
+    def __init__(self, name: str, ambient: MaterialMap = None, diffuse: MaterialMap = None, specular: MaterialMap = None, specularWeight: MaterialMap = None, dissolve: MaterialMap = None, illum: float = None, transmissionFilter: MaterialMap = None) -> None:
         self.name = name
         self.ambient = ambient or MaterialMap()
         self.diffuse = diffuse or MaterialMap()
@@ -47,6 +48,7 @@ class Material():
         self.specularWeight = specularWeight or MaterialMap()
         self.dissolve = dissolve or MaterialMap()
         self.illum = illum or 0
+        self.transmissionFilter = transmissionFilter or MaterialMap()
 
 
 class MaterialLibrary():
@@ -167,11 +169,43 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
     mtlFile = open(path, "r").read()
     mtlInstructions = mtlFile.splitlines()
 
-    currentMaterial: Material
+    currentMaterial = Material("I HATE MYSELF")  # pls fix this
 
     for instruction in mtlInstructions:
+        instructionParams = instruction.split()[1:]
 
-        pass
+        if instruction == "":
+            continue
+
+        elif IsInstruction("newmtl", instruction):
+            currentMaterial = Material(instructionParams[0])
+            mtllib.materials.append(currentMaterial)
+
+        elif IsInstruction("illum", instruction):
+            currentMaterial.illum = float(instructionParams[0])
+
+        channels: dict[str, MaterialMap]
+        channels = {
+            "Ka": currentMaterial.ambient,
+            "Kd": currentMaterial.diffuse,
+            "Ks": currentMaterial.specular,
+            "Ns": currentMaterial.specularWeight,
+            "d": currentMaterial.dissolve,
+            "Tf": currentMaterial.transmissionFilter
+        }
+
+        for channel in channels:
+            if IsInstruction(channel, instruction):
+                channels[channel].rgb = []
+                channels[channel].rgb.append(float(instructionParams[0]))
+                try:
+                    channels[channel].rgb.append(float(instructionParams[1]))
+                    channels[channel].rgb.append(float(instructionParams[2]))
+                except:
+                    pass
+
+            elif IsInstruction("map_" + channel, instruction):
+                channels[channel].map_path = instructionParams[0]
 
     return mtllib
 
