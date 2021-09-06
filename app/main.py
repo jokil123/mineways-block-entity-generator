@@ -1,4 +1,5 @@
 from nbt import nbt, region, world
+from __future__ import annotations
 
 
 class TileEntity():

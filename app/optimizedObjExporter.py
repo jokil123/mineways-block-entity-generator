@@ -1,7 +1,6 @@
-from ast import Str
-from os import fsdecode
-from PIL import Image
+from materialChannels import *
 import re
+from pathlib import Path
 
 
 class VertexNormal():
@@ -27,25 +26,6 @@ class Face():
         self.objectLabel = object
         self.groupLabel = group
         self.materialSelection = materialSelection
-
-
-class MaterialMap:
-    def __init__(self, rgb: list[float] = None, map: Image = None, map_path: str = None) -> None:
-        self.rgb = rgb or []
-        self.map = map or Image.new(mode="RGBA", size=(1, 1))
-        self.map_path = map_path or None
-
-
-class Material():
-    def __init__(self, name: str, ambient: MaterialMap = None, diffuse: MaterialMap = None, specular: MaterialMap = None, specularWeight: MaterialMap = None, dissolve: MaterialMap = None, illum: float = None, transmissionFilter: MaterialMap = None) -> None:
-        self.name = name
-        self.ambient = ambient or MaterialMap()
-        self.diffuse = diffuse or MaterialMap()
-        self.specular = specular or MaterialMap()
-        self.specularWeight = specularWeight or MaterialMap()
-        self.dissolve = dissolve or MaterialMap()
-        self.illum = illum or 0
-        self.transmissionFilter = transmissionFilter or MaterialMap()
 
 
 class MaterialLibrary():
@@ -171,29 +151,25 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
             mtllib.materials.append(currentMaterial)
 
         elif IsInstruction("illum", instruction):
-            currentMaterial.illum = float(instructionParams[0])
+            matChan = MaterialSetting("illum")
+            matChan.value = [int(instructionParams[0])]
+            currentMaterial.properties.append(matChan)
 
-        channels: dict[str, MaterialMap] = {
-            "Ka": currentMaterial.ambient,
-            "Kd": currentMaterial.diffuse,
-            "Ks": currentMaterial.specular,
-            "Ns": currentMaterial.specularWeight,
-            "d": currentMaterial.dissolve,
-            "Tf": currentMaterial.transmissionFilter
-        }
+        channels: list = ["Ka", "Kd", "Ks", "Ns", "d", "Tf"]
 
         for channel in channels:
-            if IsInstruction(channel, instruction):
-                channels[channel].rgb = []
-                channels[channel].rgb.append(float(instructionParams[0]))
-                try:
-                    channels[channel].rgb.append(float(instructionParams[1]))
-                    channels[channel].rgb.append(float(instructionParams[2]))
-                except:
-                    pass
+            matChan = MaterialChannel(channel)
+            channelExists = False
 
-            elif IsInstruction("map_" + channel, instruction):
-                channels[channel].map_path = instructionParams[0]
+            if IsInstruction(channel, instruction):
+                matChan.value = list(map(float, instructionParams))
+                channelExists = True
+            if IsInstruction("map_" + channel, instruction):
+                matChan.mapPath = instructionParams[0]
+                channelExists = True
+
+            if channelExists:
+                currentMaterial.properties.append(matChan)
 
     return mtllib
 
@@ -201,7 +177,10 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
 def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
     instructions: list[str] = []
 
-    instructions.append("mtllib " + "Your mum")
+    if not mtlPath:
+        mtlPath = path.split("/")[-1]
+    instructions.append("mtllib " + mtlPath + ".mtl")
+    SaveMaterialLibrary(model.MaterialLibrary, JoinPath(path, mtlPath))
 
     for vertexNormal in model.vertexNormals:
         command = "vn " + " ".join(map(str, vertexNormal.normal))
@@ -264,12 +243,18 @@ def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
                 for face in faceList:
                     instructions.append(CreateFaceInstruction(face))
 
-    instructions
-    pass
+    SaveFile("\n".join(instructions), path, "obj")
 
 
 def SaveMaterialLibrary(mtllib: MaterialLibrary, path: str) -> None:
-    pass
+    instructions: list[str] = []
+
+    for material in mtllib.materials:
+        instructions.append("newmtl " + material.name)
+        for property in material.properties:
+            instructions.extend(property.GenerateChannelInstructions())
+
+    SaveFile("\n".join(instructions), path, "mtl")
 
 
 def CreateFaceInstruction(face: Face) -> str:
@@ -293,5 +278,12 @@ def CreateFaceInstruction(face: Face) -> str:
     return command
 
 
-obj = LoadModel("schematics/3d/stresstest/stresstest.obj")
-SaveModel(obj, "a")
+def SaveFile(file: str, path: str, ext: str):
+    Path("/".join(path.split("/")[:-1])).mkdir(parents=True, exist_ok=True)
+    f = open(path + "." + ext, "w")
+    f.write(file)
+    f.close()
+
+
+obj = LoadModel("schematics/3d/tileEntities/tileEntities.obj")
+SaveModel(obj, "export/yourMum")
