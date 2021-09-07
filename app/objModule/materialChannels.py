@@ -53,3 +53,23 @@ class MaterialChannel(MaterialProperty):
                 pass
 
         return instructions
+
+
+class TextureHandler:
+    def __init__(self) -> None:
+        self.textures: list[Texture] = []
+
+    def LoadTexture(self, path: str) -> Texture:
+        texture = filter(lambda x: x.path == path, self.textures)
+
+        if len(texture) == 0:
+
+    def OpenImage(self, path: str) -> Image.Image:
+        pass
+
+
+class Texture:
+    def __init__(self, name: str, path: str, texture: Image.Image) -> None:
+        self.name = name
+        self.path = path
+        self.texture = texture

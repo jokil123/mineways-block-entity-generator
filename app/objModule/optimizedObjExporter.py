@@ -1,3 +1,4 @@
+from __future__ import annotations
 from materialChannels import *
 import re
 from pathlib import Path

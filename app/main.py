@@ -1,5 +1,6 @@
-from nbt import nbt, region, world
 from __future__ import annotations
+from nbt import nbt, region, world
+import objModule
 
 
 class TileEntity():
