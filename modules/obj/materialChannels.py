@@ -1,6 +1,8 @@
 from __future__ import annotations
 from PIL import Image
 
+import modules.randomError.randomError
+
 
 class Material():
     def __init__(self, name: str) -> None:
@@ -60,9 +62,14 @@ class TextureHandler:
         self.textures: list[Texture] = []
 
     def LoadTexture(self, path: str) -> Texture:
-        texture = filter(lambda x: x.path == path, self.textures)
+        textures = list(filter(lambda x: x.path == path, self.textures))
 
-        if len(texture) == 0:
+        if len(textures) == 0:
+            pass
+        elif len(textures) == 1:
+            pass
+        else:
+            raise RandomError()
 
     def OpenImage(self, path: str) -> Image.Image:
         pass

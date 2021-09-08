@@ -2,23 +2,28 @@ from __future__ import annotations
 from materialChannels import *
 import re
 from pathlib import Path
+from pathTools.pathTools import Path as PathTools
 
 
+# Holds a vertex normal vector
 class VertexNormal():
     def __init__(self, normal: list[float]) -> None:
         self.normal = normal or []
 
 
+# Holds a vertex (3D Point)
 class Vertex():
     def __init__(self, position: list[float]) -> None:
         self.position = position or []
 
 
+# Holds a texture vertex (2D Point on a Texture)
 class UvVertex():
     def __init__(self, uv: list[float]) -> None:
         self.uv = uv or []
 
 
+# Holds a face (poly or n-gon).
 class Face():
     def __init__(self, triangulation: list[int] = None, uv: list[int] = None, normal: list[int] = None, object: str = None, group: str = None, materialSelection: str = None) -> None:
         self.triangulation = triangulation or []
@@ -29,11 +34,13 @@ class Face():
         self.materialSelection = materialSelection
 
 
+# Holds a list of Materials
 class MaterialLibrary():
     def __init__(self, materials: list[Material] = None) -> None:
         self.materials = materials or []
 
 
+# Holds all data of an OBJ file
 class ObjModel():
     def __init__(self, verts: list[Vertex] = None, faces: list[Face] = None, uvVerts: list[UvVertex] = None, vertexNormals: list[VertexNormal] = None, materialLibrary: MaterialLibrary = None) -> None:
         self.verts = verts or []
@@ -45,10 +52,12 @@ class ObjModel():
         self.groupLabels: set[str] = set()
 
 
+# Test if an obj instruction is the requested one
 def IsInstruction(instructionName: str, instruction: str) -> bool:
     return bool(re.search("^(" + instructionName + ") .*$", instruction))
 
 
+# Loads an obj model and returns it
 def LoadModel(file: str) -> ObjModel:
     objFile = open(file, "r").read()
     objInstructions = objFile.splitlines()
@@ -120,17 +129,12 @@ def LoadModel(file: str) -> ObjModel:
             obj.faces.append(face)
 
     for mtllib in mtllibs:
-        path = JoinPath(file, mtllib)
+        path = PathTools.JoinPath(file, mtllib)
         obj.MaterialLibrary = LoadMaterialLibrary(path)
 
     return obj
 
-
-def JoinPath(rootPath: str, subPath: str) -> str:
-    pathSegments = rootPath.split("/")[0:-1]
-    pathSegments.append(subPath)
-    newPath = "/".join(pathSegments)
-    return newPath
+# Loads a Material Library
 
 
 def LoadMaterialLibrary(path: str) -> MaterialLibrary:
@@ -174,6 +178,8 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
 
     return mtllib
 
+# Saves a Model
+
 
 def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
     instructions: list[str] = []
@@ -181,7 +187,8 @@ def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
     if not mtlPath:
         mtlPath = path.split("/")[-1]
     instructions.append("mtllib " + mtlPath + ".mtl")
-    SaveMaterialLibrary(model.MaterialLibrary, JoinPath(path, mtlPath))
+    SaveMaterialLibrary(model.MaterialLibrary,
+                        PathTools.JoinPath(path, mtlPath))
 
     for vertexNormal in model.vertexNormals:
         command = "vn " + " ".join(map(str, vertexNormal.normal))
@@ -247,6 +254,7 @@ def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
     SaveFile("\n".join(instructions), path, "obj")
 
 
+# Saves a Material Library
 def SaveMaterialLibrary(mtllib: MaterialLibrary, path: str) -> None:
     instructions: list[str] = []
 
@@ -258,6 +266,7 @@ def SaveMaterialLibrary(mtllib: MaterialLibrary, path: str) -> None:
     SaveFile("\n".join(instructions), path, "mtl")
 
 
+# Creates OBJ instruction for a face
 def CreateFaceInstruction(face: Face) -> str:
     command = "f"
 
@@ -279,6 +288,7 @@ def CreateFaceInstruction(face: Face) -> str:
     return command
 
 
+# Saves a raw file
 def SaveFile(file: str, path: str, ext: str):
     Path("/".join(path.split("/")[:-1])).mkdir(parents=True, exist_ok=True)
     f = open(path + "." + ext, "w")
