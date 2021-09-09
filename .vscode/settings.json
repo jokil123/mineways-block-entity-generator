@@ -1,5 +1,15 @@
 {
   "python.pythonPath": ".venv/Scripts/python.exe",
   "python.terminal.activateEnvironment": true,
-  "python.terminal.activateEnvInCurrentTerminal": true
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/*.pyc": { "when": "$(basename).py" },
+    "**/__pycache__": true
+  }
 }
