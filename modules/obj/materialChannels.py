@@ -1,7 +1,7 @@
 from __future__ import annotations
 from PIL import Image
 
-import modules.randomError.randomError
+import randomError.randomError
 
 
 class Material():
