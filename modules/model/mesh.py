@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from material import Material
+from material import Material, MaterialLibrary
 
 
 # Holds a vertex normal vector
@@ -30,12 +30,6 @@ class Face():
         self.objectLabel = object
         self.groupLabel = group
         self.materialSelection = materialSelection
-
-
-# Holds a list of Materials
-class MaterialLibrary():
-    def __init__(self, materials: list[Material] = None) -> None:
-        self.materials = materials or []
 
 
 # Holds all data of an OBJ file

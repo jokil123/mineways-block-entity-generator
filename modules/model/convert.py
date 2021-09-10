@@ -5,7 +5,6 @@ from pathlib import Path
 
 from material import MaterialSetting, MaterialChannel
 from mesh import *
-from texture import TextureHandler
 
 from pathTools.pathTools import PathTools
 
@@ -92,9 +91,8 @@ def LoadModel(file: str) -> ObjModel:
 
     return obj
 
+
 # Loads a Material Library
-
-
 def LoadMaterialLibrary(path: str) -> MaterialLibrary:
     mtllib = MaterialLibrary()
 
@@ -130,6 +128,8 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
                 channelExists = True
             if IsInstruction("map_" + channel, instruction):
                 matChan.mapPath = instructionParams[0]
+                matChan.map = mtllib.textureHandler.LoadTexture(
+                    PathTools.JoinPath(path, matChan.mapPath))
                 channelExists = True
 
             if channelExists:
@@ -214,6 +214,8 @@ def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
 
 # Saves a Material Library
 def SaveMaterialLibrary(mtllib: MaterialLibrary, path: str) -> None:
+    mtllib.textureHandler.SaveTextures(path)
+
     instructions: list[str] = []
 
     for material in mtllib.materials:
@@ -254,5 +256,13 @@ def SaveFile(file: str, path: str, ext: str):
     f.close()
 
 
-obj = LoadModel("schematics/3d/tileEntities/tileEntities.obj")
-SaveModel(obj, "export/yourMum")
+def main():
+    obj = LoadModel("tests/3d/tileEntities/tileEntities.obj")
+    for texture in obj.MaterialLibrary.textureHandler.textures:
+        print(texture.name)
+
+    SaveModel(obj, "export/yourMum")
+
+
+if __name__ == "__main__":
+    main()

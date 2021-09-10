@@ -28,6 +28,12 @@ class TextureHandler:
     def CreateTexture(self, path) -> Texture:
         return Texture(PathTools(path).Name(), PathTools(path).Path(), self.OpenImage(path))
 
+    def SaveTextures(self, path) -> None:
+        for texture in self.textures:
+            newPath = PathTools.JoinPath(path, texture.name)
+            texture.texture.save(newPath)
+            texture.path = newPath
+
 
 class Texture:
     def __init__(self, name: str, path: str, texture: Image.Image) -> None:

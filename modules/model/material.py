@@ -1,12 +1,19 @@
 from __future__ import annotations
 
-from texture import Texture
+from texture import Texture, TextureHandler
 
 
 class Material():
     def __init__(self, name: str) -> None:
         self.name = name
         self.properties: list[MaterialProperty] = []
+
+
+# Holds a list of Materials
+class MaterialLibrary():
+    def __init__(self, materials: list[Material] = None) -> None:
+        self.materials = materials or []
+        self.textureHandler = TextureHandler()
 
 
 class MaterialProperty():
@@ -44,13 +51,10 @@ class MaterialChannel(MaterialProperty):
             )
 
         try:
-            self.map
+            instructions.append(
+                "map_" + self.prefix + " " + self.mapPath
+            )
         except:
-            try:
-                instructions.append(
-                    "map_" + self.prefix + " " + self.mapPath
-                )
-            except:
-                pass
+            pass
 
         return instructions
