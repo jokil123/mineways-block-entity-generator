@@ -2,10 +2,10 @@ from __future__ import annotations
 from ast import parse
 from enum import Enum, auto
 import os
-from pathlib import Path as pathLibPath
+from pathlib import Path
 
 
-class Path:
+class PathTools:
     def __init__(self, path: str) -> None:
         self.__path = self.__ParsePath(path)
 
@@ -48,7 +48,7 @@ class Path:
 
     def Create(self) -> str:
         if not self.Exists():
-            pathLibPath(self.Dir()).mkdir(parents=True, exist_ok=True)
+            Path(self.Dir()).mkdir(parents=True, exist_ok=True)
         return self.Path()
 
     def Name(self) -> str:
@@ -59,6 +59,3 @@ class Path:
 
     def Path(self) -> str:
         return "/".join(self.__path)
-
-
-print(Path("abc").Exists())

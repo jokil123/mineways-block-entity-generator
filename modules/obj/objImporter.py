@@ -2,7 +2,7 @@ from __future__ import annotations
 from materialChannels import *
 import re
 from pathlib import Path
-from pathTools.pathTools import Path as PathTools
+from pathTools.pathTools import PathTools
 
 
 # Holds a vertex normal vector

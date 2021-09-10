@@ -13,11 +13,16 @@ class GetFuckedRetard(Exception):
     pass
 
 
+class HaHaJonathan(Exception):
+    pass
+
+
 def RandomError() -> Exception:
     errorList: list[Exception] = [
         CryAboutIt(),
         ImposterAmongUs(),
-        GetFuckedRetard()
+        GetFuckedRetard(),
+        HaHaJonathan()
     ]
 
     errorIndex = random.randint(0, len(errorList) - 1)
