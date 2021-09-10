@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from PIL import Image
 
-import randomError.randomError
+from randomError.randomError import RandomError
+from pathTools.pathTools import PathTools
 
 
 class Material():
@@ -65,14 +67,19 @@ class TextureHandler:
         textures = list(filter(lambda x: x.path == path, self.textures))
 
         if len(textures) == 0:
-            pass
+            newTexture = self.CreateTexture(path)
+            self.textures.append(newTexture)
+            return newTexture
         elif len(textures) == 1:
-            pass
+            return textures[0]
         else:
             raise RandomError()
 
     def OpenImage(self, path: str) -> Image.Image:
-        pass
+        return Image.open(path).copy()
+
+    def CreateTexture(self, path) -> Texture:
+        return Texture(PathTools(path).Name(), PathTools(path).Path(), self.OpenImage(path))
 
 
 class Texture:
