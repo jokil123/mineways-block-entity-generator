@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from PIL import Image
 
-from randomError.randomError import RandomError
-from pathTools.pathTools import PathTools
+from random_error import RandomError
+from path_tools import PathTools
 
 
 class TextureHandler:
