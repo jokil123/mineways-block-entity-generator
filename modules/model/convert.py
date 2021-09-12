@@ -3,8 +3,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from material import MaterialSetting, MaterialChannel
-from mesh import *
+
+import mesh
+
+import material
 
 from pathTools.pathTools import PathTools
 
@@ -15,11 +17,11 @@ def IsInstruction(instructionName: str, instruction: str) -> bool:
 
 
 # Loads an obj model and returns it
-def LoadModel(file: str) -> ObjModel:
+def LoadModel(file: str) -> mesh.ObjModel:
     objFile = open(file, "r").read()
     objInstructions = objFile.splitlines()
 
-    obj = ObjModel()
+    obj = mesh.ObjModel()
 
     currentObject = None
     currentGroup = None
@@ -48,38 +50,39 @@ def LoadModel(file: str) -> ObjModel:
             currentMaterialSelection = instructionParams[0]
 
         elif IsInstruction("vt", instruction):
-            uv = UvVertex([float(instructionParams[0]),
-                           float(instructionParams[1])])
+            uv = mesh.UvVertex([float(instructionParams[0]),
+                                float(instructionParams[1])])
             obj.uvVerts.append(uv)
 
         elif IsInstruction("vn", instruction):
-            vertexNormal = VertexNormal([float(instructionParams[0]),
-                                         float(instructionParams[1]),
-                                         float(instructionParams[2])])
+            vertexNormal = mesh.VertexNormal([float(instructionParams[0]),
+                                              float(instructionParams[1]),
+                                              float(instructionParams[2])])
             obj.vertexNormals.append(vertexNormal)
 
         elif IsInstruction("v", instruction):
-            vertex = Vertex([float(instructionParams[0]),
-                             float(instructionParams[1]),
-                             float(instructionParams[2])])
+            vertex = mesh.Vertex([float(instructionParams[0]),
+                                  float(instructionParams[1]),
+                                  float(instructionParams[2])])
 
             obj.verts.append(vertex)
 
         elif IsInstruction("f", instruction):
-            face = Face(object=currentObject,
-                        group=currentGroup,
-                        materialSelection=currentMaterialSelection)
+            face = mesh.Face(object=currentObject,
+                             group=currentGroup,
+                             materialSelection=currentMaterialSelection)
 
             for parameter in instructionParams:
                 args = parameter.split("/")
 
-                face.triangulation.append(int(args[0]) - 1)
+                face.triangulation.append(obj.verts[int(args[0]) - 1])
+
                 try:
-                    face.uv.append(int(args[1]) - 1)
+                    face.uv.append(obj.uvVerts[int(args[1]) - 1])
                 except:
                     pass
                 try:
-                    face.normal.append(int(args[2]) - 1)
+                    face.normal.append(obj.vertexNormals[int(args[2]) - 1])
                 except:
                     pass
 
@@ -93,13 +96,13 @@ def LoadModel(file: str) -> ObjModel:
 
 
 # Loads a Material Library
-def LoadMaterialLibrary(path: str) -> MaterialLibrary:
-    mtllib = MaterialLibrary()
+def LoadMaterialLibrary(path: str) -> material.MaterialLibrary:
+    mtllib = material.MaterialLibrary()
 
     mtlFile = open(path, "r").read()
     mtlInstructions = mtlFile.splitlines()
 
-    currentMaterial = Material("I HATE MYSELF")  # pls fix this
+    currentMaterial = material.Material("I HATE MYSELF")  # pls fix this
 
     for instruction in mtlInstructions:
         instructionParams = instruction.split()[1:]
@@ -108,11 +111,11 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
             continue
 
         elif IsInstruction("newmtl", instruction):
-            currentMaterial = Material(instructionParams[0])
+            currentMaterial = material.Material(instructionParams[0])
             mtllib.materials.append(currentMaterial)
 
         elif IsInstruction("illum", instruction):
-            matChan = MaterialSetting("illum")
+            matChan = material.MaterialSetting("illum")
             matChan.value = [int(instructionParams[0])]
             currentMaterial.properties.append(matChan)
 
@@ -120,7 +123,7 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
 
         # This will instantiate material properties/channels twice (fix this)
         for channel in channels:
-            matChan = MaterialChannel(channel)
+            matChan = material.MaterialChannel(channel)
             channelExists = False
 
             if IsInstruction(channel, instruction):
@@ -139,7 +142,7 @@ def LoadMaterialLibrary(path: str) -> MaterialLibrary:
 
 
 # Saves a Model
-def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
+def SaveModel(model: mesh.ObjModel, path: str, mtlPath: str = None) -> None:
     instructions: list[str] = []
 
     if not mtlPath:
@@ -190,30 +193,30 @@ def SaveModel(model: ObjModel, path: str, mtlPath: str = None) -> None:
 
                             for face in materialFaceList:
                                 instructions.append(
-                                    CreateFaceInstruction(face))
+                                    CreateFaceInstruction(face, model))
 
                     else:
                         if len(groupFaceList) != 0:
                             instructions.append("usemtl None")
                             for face in groupFaceList:
                                 instructions.append(
-                                    CreateFaceInstruction(face))
+                                    CreateFaceInstruction(face, model))
             else:
                 if len(objectFaceList) != 0:
                     instructions.append("g None")
                     for face in objectFaceList:
-                        instructions.append(CreateFaceInstruction(face))
+                        instructions.append(CreateFaceInstruction(face, model))
         else:
             if len(faceList) != 0:
                 instructions.append("o None")
                 for face in faceList:
-                    instructions.append(CreateFaceInstruction(face))
+                    instructions.append(CreateFaceInstruction(face, model))
 
     SaveFile("\n".join(instructions), path, "obj")
 
 
 # Saves a Material Library
-def SaveMaterialLibrary(mtllib: MaterialLibrary, path: str) -> None:
+def SaveMaterialLibrary(mtllib: material.MaterialLibrary, path: str) -> None:
     mtllib.textureHandler.SaveTextures(path)
 
     instructions: list[str] = []
@@ -227,21 +230,22 @@ def SaveMaterialLibrary(mtllib: MaterialLibrary, path: str) -> None:
 
 
 # Creates OBJ instruction for a face
-def CreateFaceInstruction(face: Face) -> str:
+def CreateFaceInstruction(face: mesh.Face, model: mesh.ObjModel) -> str:
     command = "f"
 
     for i in range(len(face.triangulation)):
         args: list[str] = []
-        args.append(str(face.triangulation[i] + 1))
+
+        args.append(str(model.verts.index(face.triangulation[i]) + 1))
 
         if len(face.normal) != 0:
             if len(face.uv) != 0:
-                args.append(str(face.uv[i] + 1))
+                args.append(str(model.uvVerts.index(face.uv[i]) + 1))
             else:
                 args.append("")
-            args.append(str(face.normal[i] + 1))
+            args.append(str(model.vertexNormals.index(face.normal[i]) + 1))
         elif len(face.uv) != 0:
-            args.append(str(face.uv[i] + 1))
+            args.append(str(model.uvVerts.index(face.uv[i]) + 1))
 
         command += " " + "/".join(args)
 

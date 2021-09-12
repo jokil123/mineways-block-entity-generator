@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from material import Material, MaterialLibrary
+import material
 
 
 # Holds a vertex normal vector
@@ -23,7 +23,7 @@ class UvVertex():
 
 # Holds a face (poly or n-gon).
 class Face():
-    def __init__(self, triangulation: list[int] = None, uv: list[int] = None, normal: list[int] = None, object: str = None, group: str = None, materialSelection: str = None) -> None:
+    def __init__(self, triangulation: list[Vertex] = None, uv: list[UvVertex] = None, normal: list[VertexNormal] = None, object: str = None, group: str = None, materialSelection: str = None) -> None:
         self.triangulation = triangulation or []
         self.uv = uv or []
         self.normal = normal or []
@@ -34,11 +34,11 @@ class Face():
 
 # Holds all data of an OBJ file
 class ObjModel():
-    def __init__(self, verts: list[Vertex] = None, faces: list[Face] = None, uvVerts: list[UvVertex] = None, vertexNormals: list[VertexNormal] = None, materialLibrary: MaterialLibrary = None) -> None:
+    def __init__(self, verts: list[Vertex] = None, faces: list[Face] = None, uvVerts: list[UvVertex] = None, vertexNormals: list[VertexNormal] = None, materialLibrary: material.MaterialLibrary = None) -> None:
         self.verts = verts or []
         self.faces = faces or []
         self.uvVerts = uvVerts or []
         self.vertexNormals = vertexNormals or []
-        self.MaterialLibrary = materialLibrary or MaterialLibrary()
+        self.MaterialLibrary = materialLibrary or material.MaterialLibrary()
         self.objectLabels: set[str] = set()
         self.groupLabels: set[str] = set()

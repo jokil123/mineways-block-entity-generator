@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from texture import Texture, TextureHandler
+import texture
 
 
 class Material():
@@ -13,7 +13,7 @@ class Material():
 class MaterialLibrary():
     def __init__(self, materials: list[Material] = None) -> None:
         self.materials = materials or []
-        self.textureHandler = TextureHandler()
+        self.textureHandler = texture.TextureHandler()
 
 
 class MaterialProperty():
@@ -38,7 +38,7 @@ class MaterialChannel(MaterialProperty):
     def __init__(self, prefix: str) -> None:
         super().__init__(prefix)
         self.value: list[float] = []
-        self.map: Texture
+        self.map: texture.Texture
         self.mapPath: str
 
     def GenerateChannelInstructions(self) -> list[str]:
