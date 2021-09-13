@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import mesh
-import material
+
+from .. import mesh
+from .. import material
+from .io_util import SaveFile
 
 from path_tools import PathTools
-from io_util import SaveFile, IsInstruction
 
 
 # Saves a Model

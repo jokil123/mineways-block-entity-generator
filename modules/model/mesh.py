@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import material
+from . import material
 
 
 # Holds a vertex normal vector

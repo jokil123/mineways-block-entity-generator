@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import texture
+from . import texture
 
 
 class Material():

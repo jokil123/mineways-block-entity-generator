@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from modules.model.io.load import LoadModel
-from modules.model.io.save import SaveModel
+from model.io.load import LoadModel
+from model.io.save import SaveModel
 
 
 def main():

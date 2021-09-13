@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import mesh
-import material
+from .. import mesh
+from .. import material
+from .io_util import IsInstruction
 
-from modules.model.io.io_util import IsInstruction
-from io_util import IsInstruction
 from path_tools import PathTools
 
 
