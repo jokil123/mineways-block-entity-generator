@@ -31,7 +31,7 @@ class TextureHandler:
     def SaveTextures(self, path) -> None:
         for texture in self.textures:
             newPath = PathTools.JoinPath(path, texture.name)
-            texture.texture.save(newPath)
+            texture.texture.save(PathTools(newPath).Create())
             texture.path = newPath
 
 
