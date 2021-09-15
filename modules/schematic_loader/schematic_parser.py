@@ -1,46 +1,9 @@
-from nbt import nbt
+from __future__ import annotations
 from dataclasses import dataclass
+import dataclasses
 from enum import Enum, auto
 
-
-class MaterialType(Enum):
-    CLASSIC = "Classic"
-    POCKET = "Pocket"
-    ALPHA = "Alpha"
-
-
-@dataclass
-class NbtFile:
-    width: int
-    height: int
-    length: int
-    materials: MaterialType
-    blocks: list[int]
-    # addblocks
-    # add
-    data: list[int]
-    entities: list[entity]
-    tileEntities: list[tileEntity]
-    # icon
-    # schematicaMapping
-    # extendedMetadata
-    weOriginX: int
-    weOriginY: int
-    weOriginZ: int
-    weOffsetX: int
-    weOffsetY: int
-    weOffsetZ: int
-    # itemStackVersion
-    # blockIds
-    # itemIds
-    # tileTicks
-    # i
-    # p
-    # t
-    # x
-    # y
-    # z
-    # biomes
+from nbt import nbt
 
 
 def ParseSchematic(schematic: nbt.NBTFile) -> NbtFile:
