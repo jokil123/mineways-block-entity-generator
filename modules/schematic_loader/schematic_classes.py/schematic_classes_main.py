@@ -59,7 +59,7 @@ class Item:
     count: int
     slot: int
     id: Id
-    tag: NbtFile
+    tag: nbt.NBTFile
 
 
 @dataclass
@@ -87,7 +87,7 @@ class Entity:
 
 
 @dataclass
-class NbtFile:
+class Schematic:
     # dimensions
     width: int
     height: int
